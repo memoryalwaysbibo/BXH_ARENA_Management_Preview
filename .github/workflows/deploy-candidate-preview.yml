@@ -1,0 +1,45 @@
+name: Deploy Full Management V2 Candidate Preview
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: management-v2-candidate-pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout validated candidate branch
+        uses: actions/checkout@v4
+        with:
+          repository: memoryalwaysbibo/BXH_ARENA_Production
+          ref: preview/management-ui-v2
+          path: candidate
+          fetch-depth: 1
+      - name: Build isolated candidate site
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir site
+          find candidate -maxdepth 1 -type f ! -name 'CNAME' ! -name '*.md' ! -name 'package.json' ! -name 'playwright*.cjs' -exec cp {} site/ \;
+          cp -R candidate/assets site/assets
+          test -s site/index.html
+          test ! -e site/CNAME
+          grep -q 'account-open-interface' site/index.html
+          grep -q 'bxh-management-v2-nav' site/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+      - name: Deploy candidate preview
+        id: deployment
+        uses: actions/deploy-pages@v4
