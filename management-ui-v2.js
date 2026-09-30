@@ -33,5 +33,23 @@
     return '<nav class="management-v2-groups">'+groups.map(g=>'<button type="button" data-management-v2-group="'+g.id+'" class="'+(g.id===selected.id?'active':'')+'">'+g.label+'</button>').join('')+'</nav>'+
       '<nav class="management-v2-children">'+selected.tabs.map(t=>'<button type="button" data-management-v2-tab="'+t+'" class="'+(t===activeTab?'active':'')+'">'+(LABELS[t]||t)+'</button>').join('')+'</nav>';
   }
-  global.BXH_MANAGEMENT_UI_V2=Object.freeze({GROUPS,LABELS,groupForTab,visibleGroups,resolveActiveGroup,firstVisibleTab,renderRails});
+  function mount(options){
+    options=options||{};
+    const host=options.host;
+    if(!host)return false;
+    const visible=Array.isArray(options.visibleTabs)?options.visibleTabs:[];
+    host.innerHTML=renderRails(options.activeTab,visible);
+    host.onclick=function(e){
+      const group=e.target.closest('[data-management-v2-group]');
+      const tab=e.target.closest('[data-management-v2-tab]');
+      if(group&&typeof options.onGroup==='function'){
+        const key=firstVisibleTab(group.dataset.managementV2Group,visible);
+        if(key)options.onGroup(key,group.dataset.managementV2Group);
+      }else if(tab&&typeof options.onTab==='function'){
+        options.onTab(tab.dataset.managementV2Tab);
+      }
+    };
+    return true;
+  }
+  global.BXH_MANAGEMENT_UI_V2=Object.freeze({GROUPS,LABELS,groupForTab,visibleGroups,resolveActiveGroup,firstVisibleTab,renderRails,mount});
 })(window);
